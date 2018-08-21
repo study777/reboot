@@ -3,10 +3,13 @@ package server
 import (
 	"github.com/gorilla/mux"
 	"net/http"
+	"reboot/server/controller"
+	"reboot/server/controller/task"
 )
 
 type Options struct {
 	ListenAddr string
+	CtrlOpts   *controller.Options
 }
 
 type Server interface {
@@ -21,6 +24,10 @@ type server struct {
 
 func New(opt Options) Server {
 	r := mux.NewRouter()
+	//add router
+	v1Router := r.PathPrefix("/reboot/api/v1").Subrouter()
+	//v2Router := r.PathPrefix("/reboot/api/v2").Subrouter()
+	task.New(opt.CtrlOpts).Register(v1Router)
 	return &server{
 		opt:    opt,
 		router: r,
