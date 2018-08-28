@@ -7,6 +7,7 @@ import (
 	"github.com/leopoldxx/go-utils/trace"
 	"net/http"
 	"reboot/server/controller"
+	"reboot/server/utils"
 )
 
 type task struct {
@@ -20,8 +21,19 @@ func New(opt *controller.Options) controller.Controller {
 func (t *task) Register(router *mux.Router) {
 	//localhost:7878/reboot/api/v1/namespace/{xxx}/tasks/{task}
 	subrouter := router.PathPrefix("/namespaces/{namespace}").Subrouter()
+	subrouter.Use(utils.LoggingMiddleware)
 	//subrouter.Methods("GET").Path("/tasks/{task}").HandlerFunc(t.getTask)
-	subrouter.Methods("GET").Path("/tasks/{task}").HandlerFunc(middleware.RecoverWithTrace("getTask").HandlerFunc(t.getTask))
+
+	//为了测试 loggingMiddleware
+	//subrouter.Methods("GET").Path("/tasks/{task}").HandlerFunc(middleware.RecoverWithTrace("getTask").HandlerFunc(
+	//	utils.AuthenticateMW().HandlerFunc(t.getTask),
+	//),
+	//)
+
+	subrouter.Methods("GET").Path("/tasks/{task}").HandlerFunc(
+		middleware.RecoverWithTrace("getTask").HandlerFunc(t.getTask),
+	)
+
 	subrouter.Methods("GET").Path("/tasks").HandlerFunc(middleware.RecoverWithTrace("listTask").HandlerFunc(t.listTask))
 	//subrouter.Methods("GET").Path("/tasks").HandlerFunc(t.listTask)
 	subrouter.Methods("POST").Path("/tasks").HandlerFunc(middleware.RecoverWithTrace("createTask").HandlerFunc(t.createTask))
