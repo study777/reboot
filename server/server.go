@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reboot/server/controller"
 	"reboot/server/controller/task"
+	"reboot/server/service"
 )
 
 type Options struct {
@@ -28,6 +29,9 @@ func New(opt Options) Server {
 	v1Router := r.PathPrefix("/reboot/api/v1").Subrouter()
 	//v2Router := r.PathPrefix("/reboot/api/v2").Subrouter()
 	task.New(opt.CtrlOpts).Register(v1Router)
+	opt.CtrlOpts.Service = service.New(&service.Options{
+		//DB
+	})
 	return &server{
 		opt:    opt,
 		router: r,

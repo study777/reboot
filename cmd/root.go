@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"reboot/server"
+	"reboot/server/controller"
 	"time"
 )
 
@@ -52,6 +53,7 @@ to quickly create a Cobra application.`,
 		glog.Info(viper.GetString("server.listen"))
 		s := server.New(server.Options{
 			ListenAddr: viper.GetString("server.listen"),
+			CtrlOpts:   &controller.Options{},
 		})
 		glog.Fatal(s.ListenAndServer())
 	},

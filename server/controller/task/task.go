@@ -46,8 +46,10 @@ func (t *task) Register(router *mux.Router) {
 }
 
 func (t *task) getTask(w http.ResponseWriter, r *http.Request) {
+
 	tracer := trace.GetTraceFromRequest(r)
 	tracer.Info("call geTask")
+	t.opt.Service.GetTask(r.Context())
 	fmt.Fprintln(w, "call getTask")
 }
 
