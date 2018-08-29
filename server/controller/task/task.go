@@ -14,6 +14,19 @@ type task struct {
 	opt *controller.Options
 }
 
+// 客户端返回数据定义格式
+/*
+{
+    "code":200,
+    "msg":"suceess",
+}
+{
+    "code":400,
+    "msg":"error message",
+}
+
+*/
+
 func New(opt *controller.Options) controller.Controller {
 	return &task{opt: opt}
 }
@@ -49,8 +62,14 @@ func (t *task) getTask(w http.ResponseWriter, r *http.Request) {
 
 	tracer := trace.GetTraceFromRequest(r)
 	tracer.Info("call geTask")
-	t.opt.Service.GetTask(r.Context())
-	fmt.Fprintln(w, "call getTask")
+	err := t.opt.Service.GetTask(r.Context())
+	if err != nil {
+		tracer.Error(err)
+		utils.CommReply(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	//fmt.Fprintln(w, "call getTask")
+	utils.CommReply(w, r, http.StatusOK, "success")
 }
 
 func (t *task) listTask(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +81,8 @@ func (t *task) listTask(w http.ResponseWriter, r *http.Request) {
 func (t *task) createTask(w http.ResponseWriter, r *http.Request) {
 	tracer := trace.GetTraceFromRequest(r)
 	tracer.Info("call createTask")
-	fmt.Fprintln(w, "call createTask")
+	//fmt.Fprintln(w, "call createTask")
+	utils.CommReply(w, r, http.StatusAccepted, "Accept")
 }
 
 func (t *task) deleteTask(w http.ResponseWriter, r *http.Request) {
