@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/gorilla/mux"
+	"reboot/pkg/dao"
 	"reboot/server/service"
 )
 
@@ -10,4 +11,5 @@ type Controller interface {
 }
 type Options struct {
 	Service service.Operation
+	DB      dao.Storage
 }

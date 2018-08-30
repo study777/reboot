@@ -1,12 +1,15 @@
 package task
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/leopoldxx/go-utils/middleware"
 	"github.com/leopoldxx/go-utils/trace"
+	"io/ioutil"
 	"net/http"
 	"reboot/server/controller"
+	"reboot/server/service"
 	"reboot/server/utils"
 )
 
@@ -81,7 +84,25 @@ func (t *task) listTask(w http.ResponseWriter, r *http.Request) {
 func (t *task) createTask(w http.ResponseWriter, r *http.Request) {
 	tracer := trace.GetTraceFromRequest(r)
 	tracer.Info("call createTask")
-	//fmt.Fprintln(w, "call createTask")
+	vars := mux.Vars(r)
+	ns := vars["namespace"]
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		tracer.Error(err)
+		utils.CommReply(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	info := &service.Task{}
+	err = json.Unmarshal(data, info)
+	if err != nil {
+		tracer.Error(err)
+		utils.CommReply(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	fmt.Fprintln(w, "call createTask")
+	//Todo: validate  验证 ns  resource  是否合法
+	t.opt.Service.CreateTask(r.Context(), ns, info.Resource)
 	utils.CommReply(w, r, http.StatusAccepted, "Accept")
 }
 
