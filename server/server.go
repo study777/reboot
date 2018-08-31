@@ -30,7 +30,7 @@ func New(opt Options) Server {
 	//v2Router := r.PathPrefix("/reboot/api/v2").Subrouter()
 	task.New(opt.CtrlOpts).Register(v1Router)
 	opt.CtrlOpts.Service = service.New(&service.Options{
-		//DB
+		DB: opt.CtrlOpts.DB,
 	})
 	return &server{
 		opt:    opt,

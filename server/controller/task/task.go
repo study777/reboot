@@ -92,7 +92,7 @@ func (t *task) createTask(w http.ResponseWriter, r *http.Request) {
 		utils.CommReply(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	tracer.Info(string(data))
 	info := &service.Task{}
 	err = json.Unmarshal(data, info)
 	if err != nil {
@@ -100,10 +100,15 @@ func (t *task) createTask(w http.ResponseWriter, r *http.Request) {
 		utils.CommReply(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
-	fmt.Fprintln(w, "call createTask")
 	//Todo: validate  验证 ns  resource  是否合法
-	t.opt.Service.CreateTask(r.Context(), ns, info.Resource)
-	utils.CommReply(w, r, http.StatusAccepted, "Accept")
+	task, err := t.opt.Service.CreateTask(r.Context(), ns, info.Resource)
+	if err != nil {
+		tracer.Error(err)
+		utils.CommReply(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	js, _ := json.Marshal(task)
+	utils.CommReply(w, r, http.StatusAccepted, string(js))
 }
 
 func (t *task) deleteTask(w http.ResponseWriter, r *http.Request) {

@@ -22,7 +22,7 @@ func init() {
 }
 
 func initDaoDefault() {
-	viper.SetDefault(DaoConnection, "root:root@/reboot?charset=utf-8&parseTime=true")
+	viper.SetDefault(DaoConnection, "root:root@/reboot?charset=utf8&parseTime=true")
 }
 
 func GetDao() dao.Storage {
