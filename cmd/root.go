@@ -58,7 +58,13 @@ to quickly create a Cobra application.`,
 				DB: pkgs.GetDao(),
 			},
 		})
+
+		schedManager := pkgs.GetScheduler(pkgs.GetDao())
+		go schedManager.Schedule()
+		defer schedManager.Stop()
 		glog.Fatal(s.ListenAndServer())
+		//Todo: graceful exit
+
 	},
 }
 

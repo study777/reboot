@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/leopoldxx/go-utils/trace"
+	"github.com/zieckey/etcdsync"
 	"reboot/pkg/dao"
 	"reboot/pkg/dao/mysql/types"
 	taskTypes "reboot/pkg/task/types"
@@ -14,8 +15,8 @@ import (
 )
 
 const (
-	defaultPrefix            = "/github.com/reboot/pkg/task/scheduler/lock"
-	defaultScheduleCycle int = time.Second * 1
+	defaultPrefix        = "/github.com/reboot/pkg/task/scheduler/lock"
+	defaultScheduleCycle = time.Second * 1
 )
 
 type Scheduler interface {
@@ -45,7 +46,7 @@ func NewManager(ctx context.Context, dao dao.Storage) (*Manager, error) {
 		lockPrefix:    defaultPrefix,
 		ScheduleCycle: defaultScheduleCycle,
 	}
-	ctx, cancel := context.WithCancel(trace.WithForContext(ctx), "task-scheduler")
+	ctx, cancel := context.WithCancel(trace.WithTraceForContext(ctx, "task-scheduler"))
 	return &Manager{
 		schedulers: map[string]Scheduler{},
 		ctx:        ctx,
@@ -94,7 +95,7 @@ func (m *Manager) Schedule() error {
 	tracer.Info("start scheduling the pending task")
 
 	for range m.ticker.C {
-		tasks, errr := m.dao.ListOpenTasks(m.ctx)
+		tasks, err := m.dao.ListOpenTasks(m.ctx)
 		if err != nil {
 			if err == context.Canceled {
 				tracer.Info("scheduler has been stopped")
@@ -104,7 +105,7 @@ func (m *Manager) Schedule() error {
 			time.Sleep(time.Second)
 			continue
 		}
-		tracer.Info("total get %d pending tasks \n", len(tasks))
+		tracer.Infof("total get %d pending tasks \n", len(tasks))
 		for _, task := range tasks {
 			scheduler, exits := m.schedulers[task.Resource]
 			if !exits {
@@ -115,16 +116,35 @@ func (m *Manager) Schedule() error {
 			go func(task types.Task) {
 				defer m.wg.Done()
 				newCtx := trace.WithTraceForContext(m.ctx,
-					fmt.Sprintf("schedulerTask:%s:%s:%d", task.Resource, task.Type, tasks.ID))
+					fmt.Sprintf("schedulerTask:%s:%s:%d", task.Resource, task.Type, task.ID))
 				tracer := trace.GetTraceFromContext(newCtx)
 				tracer.Info("task start...")
 				//Todo etcd lock
-				newTask, err := m.dao.GetOpenTaskByTaskID(newCtx, task.ID)
-				if err != nil {
-					tracer.Error("task can't be scheduled now:%d,err: %v\n", task.ID, err)
+				lockkey := fmt.Sprintf("%s/%d", m.lockPrefix, task.ID)
+				locker, err := etcdsync.New(lockkey, 20, []string{"http://127.0.0.1:2379"})
+				if locker == nil || err != nil {
+					tracer.Error("etcdsync.New failed")
 					return
 				}
-				err := scheduler.Schedule(newCtx, utils.ConvertDBTaskToSchedulerTask(task))
+				err = locker.Lock()
+				if err != nil {
+					tracer.Errorf("lock error %v\n", err)
+					return
+				}
+				defer func() {
+					time.Sleep(time.Second)
+					err = locker.Unlock()
+					if err != nil {
+						tracer.Errorf("unlock error %v\n", err)
+						return
+					}
+				}()
+				newTask, err := m.dao.GetOpenTaskByTaskID(newCtx, task.ID)
+				if err != nil {
+					tracer.Errorf("task can't be scheduled now:%d,err: %v\n", task.ID, err)
+					return
+				}
+				err = scheduler.Schedule(newCtx, utils.ConvertDBTaskToSchedulerTask(newTask))
 
 				if err != nil {
 					if err == context.Canceled {
