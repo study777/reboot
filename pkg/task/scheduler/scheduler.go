@@ -141,6 +141,9 @@ func (m *Manager) Schedule() error {
 				}()
 				newTask, err := m.dao.GetOpenTaskByTaskID(newCtx, task.ID)
 				if err != nil {
+					if err.Error() == "task not found" {
+						return
+					}
 					tracer.Errorf("task can't be scheduled now:%d,err: %v\n", task.ID, err)
 					return
 				}

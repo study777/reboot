@@ -37,7 +37,7 @@ func (sched *taskScheduler) Init(cfg schedTypes.InitConfigs) error {
 
 func (sched *taskScheduler) Schedule(ctx context.Context, task *schedTypes.Task) error {
 	tracer := trace.GetTraceFromContext(ctx)
-	tracer.Info("Get a task,%v\n", *task)
+	tracer.Infof("Get a task,%v\n", *task)
 	t, err := convertSchedTaskToTask(task)
 	if err != nil {
 		tracer.Error("convert task failed %v\n", err)
@@ -68,7 +68,7 @@ func (sched *taskScheduler) TaskPending(ctx context.Context, t *taskTypes.Task) 
 	tracer := trace.GetTraceFromContext(ctx)
 	tracer.Info("call TaskPending func")
 	/*
-		Todo: xxx
+	   Todo: xxx
 	*/
 	t.Status.State = enum.TaskDoing
 	return sched.updateTaskStatus(ctx, t)
@@ -78,7 +78,7 @@ func (sched *taskScheduler) TaskDoing(ctx context.Context, t *taskTypes.Task) er
 	tracer := trace.GetTraceFromContext(ctx)
 	tracer.Info("call TaskDoing func")
 	/*
-		Todo: xxx
+	   Todo: xxx
 	*/
 	t.Status.State = enum.TaskDone
 	return sched.updateTaskStatus(ctx, t)
@@ -88,7 +88,7 @@ func (sched *taskScheduler) TaskDone(ctx context.Context, t *taskTypes.Task) err
 	tracer := trace.GetTraceFromContext(ctx)
 	tracer.Info("call TaskDone func")
 	/*
-		Todo: xxx
+	   Todo: xxx
 	*/
 	t.Common.Close = true
 	return sched.updateTaskStatus(ctx, t)

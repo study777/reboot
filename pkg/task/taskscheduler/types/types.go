@@ -8,6 +8,7 @@ import (
 // Task represent an PodVMGroup task
 type Task struct {
 	Common *types.Common
+	//*types.Task
 	Spec   *Spec
 	Status *Status
 }
